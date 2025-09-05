@@ -1,0 +1,43 @@
+name: Selenium TestNG CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest   # Linux VM for CI
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 22
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '22'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn clean compile
+
+      - name: Run Selenium Tests (Headless Chrome)
+        run: |
+          mvn test -Dtestng.dtd.http=true
+
+      - name: Upload TestNG Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestNG-Report
+          path: target/surefire-reports/
